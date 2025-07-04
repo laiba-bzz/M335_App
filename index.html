@@ -1,41 +1,84 @@
-import 'package:permission_handler/permission_handler.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:vibration/vibration.dart';
 
-/// 2. Permissionscreen: fragt Location- und Bewegungssensor-Permissions ab
-class PermissionScreen extends StatefulWidget {
-  const PermissionScreen({super.key});
+/// 3. MainPage: Bewegung ja/nein, Intervalleingabe, Stop-Button
+class MainPage extends StatefulWidget {
+  const MainPage({super.key});
   @override
-  State<PermissionScreen> createState() => _PermissionScreenState();
+  State<MainPage> createState() => _MainPageState();
 }
 
-class _PermissionScreenState extends State<PermissionScreen> {
-  Future<void> _requestPermissions() async {
-    final locStatus = await Permission.locationWhenInUse.request();
-    final actStatus = await Permission.activityRecognition.request();
-
-    if (locStatus.isGranted && actStatus.isGranted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainPage()),
-      );
-    } else {
-      Navigator.of(context).popUntil((route) => route.isFirst);
-    }
-  }
+class _MainPageState extends State<MainPage> {
+  bool _moving = false;
+  double _totalDistance = 0;
+  double _bufferDistance = 0;
+  int _vibrationCount = 0;
+  int _intervalMeters = 100;
+  late final TextEditingController _intervalController;
+  StreamSubscription<Position>? _positionSub;
+  Position? _lastPos;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(_requestPermissions);
+    _intervalController = TextEditingController(text: '$_intervalMeters');
+    // später: Location-Updates abonnieren
+  }
+
+  @override
+  void dispose() {
+    _positionSub?.cancel();
+    _intervalController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          'StepVibe benötigt Zugriff auf Standort- und Bewegungssensoren.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18),
+    return Scaffold(
+      appBar: AppBar(title: const Text('StepVibe')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Bewegung erkannt: ${_moving ? "Ja" : "Nein"}',
+                  style: const TextStyle(fontSize: 20),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                const Text('Vibrationsintervall (Meter):'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _intervalController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (s) {
+                      final v = int.tryParse(s);
+                      if (v != null && v > 0) _intervalMeters = v;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            ElevatedButton(
+              onPressed: () {
+                // später: zu Ergebnisseite navigieren
+              },
+              child: const Text('Stop'),
+            ),
+          ],
         ),
       ),
     );
