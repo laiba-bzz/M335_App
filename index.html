@@ -1,86 +1,36 @@
-import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:vibration/vibration.dart';
-
-/// 3. MainPage: Bewegung ja/nein, Intervalleingabe, Stop-Button
-class MainPage extends StatefulWidget {
-  const MainPage({super.key});
-  @override
-  State<MainPage> createState() => _MainPageState();
+@override
+void initState() {
+  super.initState();
+  _intervalController = TextEditingController(text: '$_intervalMeters');
+  // Location-Updates starten
+  _positionSub = Geolocator.getPositionStream(
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.best,
+      distanceFilter: 1,
+    ),
+  ).listen(_onPosition);
 }
 
-class _MainPageState extends State<MainPage> {
-  bool _moving = false;
-  double _totalDistance = 0;
-  double _bufferDistance = 0;
-  int _vibrationCount = 0;
-  int _intervalMeters = 100;
-  late final TextEditingController _intervalController;
-  StreamSubscription<Position>? _positionSub;
-  Position? _lastPos;
-
-  @override
-  void initState() {
-    super.initState();
-    _intervalController = TextEditingController(text: '$_intervalMeters');
-    // später: Location-Updates abonnieren
-  }
-
-  @override
-  void dispose() {
-    _positionSub?.cancel();
-    _intervalController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('StepVibe')),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Bewegung erkannt: ${_moving ? "Ja" : "Nein"}',
-                  style: const TextStyle(fontSize: 20),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                const Text('Vibrationsintervall (Meter):'),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _intervalController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (s) {
-                      final v = int.tryParse(s);
-                      if (v != null && v > 0) _intervalMeters = v;
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            ElevatedButton(
-              onPressed: () {
-                // später: zu Ergebnisseite navigieren
-              },
-              child: const Text('Stop'),
-            ),
-          ],
-        ),
-      ),
+void _onPosition(Position pos) {
+  if (_lastPos != null) {
+    final inc = Geolocator.distanceBetween(
+      _lastPos!.latitude,
+      _lastPos!.longitude,
+      pos.latitude,
+      pos.longitude,
     );
+    _totalDistance += inc;
+    _bufferDistance += inc;
+    _moving = pos.speed > 0.5;
+
+    if (_bufferDistance >= _intervalMeters) {
+      _vibrationCount++;
+      print('🔔 Vibration #$_vibrationCount ausgelöst bei Gesamtdistanz '
+            '${_totalDistance.toStringAsFixed(0)} m');
+      Vibration.vibrate(duration: 200);
+      _bufferDistance = 0;
+    }
+    setState(() {});
   }
+  _lastPos = pos;
 }
