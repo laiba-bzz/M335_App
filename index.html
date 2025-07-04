@@ -1,42 +1,41 @@
-import 'dart:async';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
+/// 2. Permissionscreen: fragt Location- und Bewegungssensor-Permissions ab
+class PermissionScreen extends StatefulWidget {
+  const PermissionScreen({super.key});
+  @override
+  State<PermissionScreen> createState() => _PermissionScreenState();
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'StepVibe',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const StartScreen(),
-    );
+class _PermissionScreenState extends State<PermissionScreen> {
+  Future<void> _requestPermissions() async {
+    final locStatus = await Permission.locationWhenInUse.request();
+    final actStatus = await Permission.activityRecognition.request();
+
+    if (locStatus.isGranted && actStatus.isGranted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MainPage()),
+      );
+    } else {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
-}
 
-/// 1. Startscreen mit Logo und Start-Button
-class StartScreen extends StatelessWidget {
-  const StartScreen({super.key});
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_requestPermissions);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const FlutterLogo(size: 120),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {/* später: Navigation zu Permissions */},
-                child: const Text('Start'),
-              ),
-            ],
-          ),
+        child: Text(
+          'StepVibe benötigt Zugriff auf Standort- und Bewegungssensoren.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 18),
         ),
       ),
     );
