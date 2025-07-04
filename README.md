@@ -1,3 +1,4 @@
+````markdown
 # stepvibe
 
 stepvibe is a Flutter mobile app that helps users track their walking distance, set vibration-based interval reminders, and review their activity summary. It guides the user through permission granting, real-time location tracking, and provides haptic feedback every set distance.
@@ -50,16 +51,9 @@ stepvibe is a Flutter mobile app that helps users track their walking distance, 
 4. Review total distance and vibration count on the **ResultPage**
 5. Tap **OK** to return to start
 
-## Project Structure
-
-```
-lib/
-├── main.dart             # App entry point & StartScreen
-├── permission_screen.dart # PermissionScreen
-├── main_page.dart        # MainPage with tracking & vibration logic
-└── result_page.dart      # ResultPage summary
-```
-
 ## License
 
 This project is licensed under the MIT License.
+
+```
+```
