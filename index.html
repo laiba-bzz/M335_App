@@ -1,36 +1,38 @@
-@override
-void initState() {
-  super.initState();
-  _intervalController = TextEditingController(text: '$_intervalMeters');
-  // Location-Updates starten
-  _positionSub = Geolocator.getPositionStream(
-    locationSettings: const LocationSettings(
-      accuracy: LocationAccuracy.best,
-      distanceFilter: 1,
-    ),
-  ).listen(_onPosition);
-}
+class ResultPage extends StatelessWidget {
+  final double distanceMeters;
+  final int vibrationCount;
+  const ResultPage({
+    super.key,
+    required this.distanceMeters,
+    required this.vibrationCount,
+  });
 
-void _onPosition(Position pos) {
-  if (_lastPos != null) {
-    final inc = Geolocator.distanceBetween(
-      _lastPos!.latitude,
-      _lastPos!.longitude,
-      pos.latitude,
-      pos.longitude,
+  @override
+  Widget build(BuildContext context) {
+    final km = (distanceMeters / 1000).toStringAsFixed(2);
+    final m = distanceMeters.toStringAsFixed(0);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Ergebnis')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Distanz: $m m  ($km km)',
+                style: const TextStyle(fontSize: 20)),
+            const SizedBox(height: 16),
+            Text('Anzahl Vibrationen: $vibrationCount',
+                style: const TextStyle(fontSize: 20)),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).popUntil((r) => r.isFirst);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      ),
     );
-    _totalDistance += inc;
-    _bufferDistance += inc;
-    _moving = pos.speed > 0.5;
-
-    if (_bufferDistance >= _intervalMeters) {
-      _vibrationCount++;
-      print('🔔 Vibration #$_vibrationCount ausgelöst bei Gesamtdistanz '
-            '${_totalDistance.toStringAsFixed(0)} m');
-      Vibration.vibrate(duration: 200);
-      _bufferDistance = 0;
-    }
-    setState(() {});
   }
-  _lastPos = pos;
 }
